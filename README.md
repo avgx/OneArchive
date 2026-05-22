@@ -141,7 +141,7 @@ Deterministic decoding tests on bundled fixtures; no live integration tests in C
 SRC='hosts/Demoserver/MultimediaStorage.AliceBlue/Sources/src.4CA1C29C-1701-20D0-3314-2616196C6730'
 STORAGE='hosts/Demoserver/MultimediaStorage.AliceBlue/MultimediaStorage'
 
-curl -s 'http://try.axxonsoft.com/v1/archive/history2' -u 'root:Root1234' \
+curl -s 'http://try.axxonsoft.com/v1/archive/history2' \
   --get --data-urlencode "access_point=${SRC}" \
   --data-urlencode 'begin_time=3721920000000' \
   --data-urlencode 'end_time=3980000000000' \
@@ -149,15 +149,15 @@ curl -s 'http://try.axxonsoft.com/v1/archive/history2' -u 'root:Root1234' \
   --data-urlencode 'min_gap_ms=86400000' \
   --data-urlencode 'scan_mode=SM_APPROXIMATE'
 
-curl -s 'http://try.axxonsoft.com/v1/archive/calendar' -u 'root:Root1234' \
+curl -s 'http://try.axxonsoft.com/v1/archive/calendar' \
   --get --data-urlencode "access_point=${SRC}" \
   --data-urlencode 'begin_time=3721920000000' \
   --data-urlencode 'end_time=3980000000000'
 
-curl -s 'http://try.axxonsoft.com/v1/archive/recordingInfo' -u 'root:Root1234' \
+curl -s 'http://try.axxonsoft.com/v1/archive/recordingInfo' \
   --get --data-urlencode "access_point=${STORAGE}"
 
-curl -s 'http://try.axxonsoft.com/v1/archive/volumes/state' -u 'root:Root1234' \
+curl -s 'http://try.axxonsoft.com/v1/archive/volumes/state' \
   --get --data-urlencode "access_point=${STORAGE}"
 ```
 
