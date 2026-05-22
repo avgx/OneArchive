@@ -6,17 +6,17 @@ public enum ArchiveApi {
     /// Endpoint: `GET /v1/archive/history2`
     ///
     /// Returns available history intervals for a source. Response may be partial; see `HistoryResponse.result`.
-    public static func history2(_ request: HistoryRequest) -> Request<Data> {
+    public static func history2(_ parameters: HistoryRequest) -> Request<HistoryResponse> {
         Request(
             path: "v1/archive/history2",
             method: .get,
             query: [
-                ("access_point", request.accessPoint),
-                ("begin_time", String(request.beginTimeMs)),
-                ("end_time", String(request.endTimeMs)),
-                ("max_count", String(request.maxCount)),
-                ("min_gap_ms", String(request.minGapMs)),
-                ("scan_mode", request.scanMode.rawValue),
+                ("access_point", parameters.accessPoint),
+                ("begin_time", String(parameters.beginTimeMs)),
+                ("end_time", String(parameters.endTimeMs)),
+                ("max_count", String(parameters.maxCount)),
+                ("min_gap_ms", String(parameters.minGapMs)),
+                ("scan_mode", parameters.scanMode.rawValue),
             ]
         )
     }
@@ -28,7 +28,7 @@ public enum ArchiveApi {
         accessPoint: AccessPoint,
         begin: Date,
         end: Date
-    ) -> Request<Data> {
+    ) -> Request<CalendarResponse> {
         Request(
             path: "v1/archive/calendar",
             method: .get,
@@ -47,7 +47,7 @@ public enum ArchiveApi {
         accessPoint: AccessPoint,
         begin: Date,
         end: Date
-    ) -> Request<Data> {
+    ) -> Request<CalendarResponse> {
         calendar(accessPoint: accessPoint, begin: begin, end: end)
     }
 
@@ -58,7 +58,7 @@ public enum ArchiveApi {
         accessPoint: AccessPoint,
         beginTime: String,
         endTime: String
-    ) -> Request<Data> {
+    ) -> Request<SizeResponse> {
         Request(
             path: "v1/archive/size",
             method: .get,
@@ -74,7 +74,7 @@ public enum ArchiveApi {
     public static func recordingInfo(
         accessPoint: AccessPoint,
         updateCache: Bool = false
-    ) -> Request<Data> {
+    ) -> Request<RecInfoResponse> {
         Request(
             path: "v1/archive/recordingInfo",
             method: .get,
@@ -91,7 +91,7 @@ public enum ArchiveApi {
     public static func volumesState(
         accessPoint: AccessPoint,
         volumeIds: [String] = []
-    ) -> Request<Data> {
+    ) -> Request<VolumesStateResponse> {
         var query: [(String, String?)] = [
             ("access_point", accessPoint),
         ]

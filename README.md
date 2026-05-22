@@ -11,21 +11,23 @@ The package does **not** use protobuf code generation. Models follow what the se
 
 | Package | Role in OneArchive |
 |---------|-------------------|
-| [RequestResponse](https://github.com/avgx/RequestResponse) | `ArchiveApi` returns `Request<Data>` |
+| [RequestResponse](https://github.com/avgx/RequestResponse) | `ArchiveApi` returns `Request<Response>`; paths are relative to a `RequestBuilder` base URL |
 | [SafeEnum](https://github.com/avgx/SafeEnum) | Unknown enum wire values decode without failing the payload (e.g. `result`, volume `state`) |
 
 ## What is included
 
 ### API surface (`ArchiveApi`)
 
-| Method | HTTP | Response |
-|--------|------|----------|
+| Method | HTTP | `Request<…>` |
+|--------|------|--------------|
 | `ArchiveApi.history2(_:)` | `GET /v1/archive/history2` | `HistoryResponse` |
 | `ArchiveApi.calendar(accessPoint:begin:end:)` | `GET /v1/archive/calendar` | `CalendarResponse` |
 | `ArchiveApi.depth(accessPoint:begin:end:)` | `GET /v1/archive/calendar` (wide range) | `CalendarResponse` → ``CalendarResponse/depth`` |
-| `ArchiveApi.size(accessPoint:beginTime:endTime:)` | `GET /v1/archive/size` | `GetSizeResponse` |
+| `ArchiveApi.size(accessPoint:beginTime:endTime:)` | `GET /v1/archive/size` | `SizeResponse` |
 | `ArchiveApi.recordingInfo(accessPoint:updateCache:)` | `GET /v1/archive/recordingInfo` | `RecInfoResponse` |
-| `ArchiveApi.volumesState(accessPoint:volumeIds:)` | `GET /v1/archive/volumes/state` | `GetVolumesStateResponse` |
+| `ArchiveApi.volumesState(accessPoint:volumeIds:)` | `GET /v1/archive/volumes/state` | `VolumesStateResponse` |
+
+Unlike **OneDomain** (`Request<Data>` + SSE/multipart), archive endpoints return a single JSON document — the response type is known at the call site.
 
 
 ### Access point
@@ -47,7 +49,7 @@ let sourceAP = "hosts/Demoserver/MultimediaStorage.AliceBlue/Sources/src.4CA1C29
 let begin = ArchiveTime.date(millisecondsSince1900: 3_961_369_121_412)
 let end = begin.addingTimeInterval(3600)
 
-let historyRequest = HistoryRequest(
+let parameters = HistoryRequest(
     accessPoint: sourceAP,
     begin: begin,
     end: end,
@@ -55,19 +57,18 @@ let historyRequest = HistoryRequest(
     minGapMs: 0,
     scanMode: .exact
 )
-let request = ArchiveApi.history2(historyRequest)
+let history: Request<HistoryResponse> = ArchiveApi.history2(parameters)
 
 // Archive depth (legacy `statistics/depth` replacement)
-let depthRequest = ArchiveApi.depth(
+let depth: Request<CalendarResponse> = ArchiveApi.depth(
     accessPoint: sourceAP,
     begin: ArchiveTime.epoch1900,
     end: .now
 )
-// decode CalendarResponse → `calendar.depth` is `ArchiveDepth?`
 
-let decoder = JSONDecoder()
-let history = try decoder.decode(HistoryResponse.self, from: data)
+// Send with Get / RequestBuilder → Response<HistoryResponse>.value
 // history.intervals[0].begin / .end are `Date`
+// calendar.depth is `ArchiveDepth?`
 ```
 
 ## Timeline policy (replacing legacy archive intervals)
@@ -108,9 +109,9 @@ Sources/OneArchive/
 ├── API/           ArchiveApi, AccessPoint
 ├── History/       HistoryRequest, HistoryResponse, ScanMode, …
 ├── Calendar/      CalendarResponse, ArchiveDepth
-├── Size/
+├── Size/          SizeResponse
 ├── RecordingInfo/
-├── Volumes/
+├── Volumes/       VolumesStateResponse, VolumeState
 └── Primitive/     ArchiveTime, ArchiveWireInt64 (string or number on wire)
 ```
 
@@ -162,8 +163,8 @@ curl -s 'http://try.axxonsoft.com/v1/archive/volumes/state' -u 'root:Root1234' \
 
 ## Related work
 
-- **OneDomain** — cameras, archive bindings, storage access points.
-- **RequestResponse** + your HTTP client — send `Request<Data>` and decode JSON in the app.
+- **OneDomain** — cameras, archive bindings; uses `Request<Data>` for streaming list APIs.
+- **Get** + **RequestResponse** — `RequestBuilder.json` sends typed `Request<T>`; client decodes `Response<T>`.
 
 ## License
 
