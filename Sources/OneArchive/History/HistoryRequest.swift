@@ -1,4 +1,5 @@
 import Foundation
+import OneWireFormat
 
 /// Query parameters for `GET /v1/archive/history2` (`GetHistory2Request`).
 public struct HistoryRequest: Equatable, Sendable {

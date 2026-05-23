@@ -1,4 +1,5 @@
 import Foundation
+import OneWireFormat
 import RequestResponse
 
 /// Archive API (Native BL `v1/archive/*`).
