@@ -105,4 +105,31 @@ public enum ArchiveApi {
             query: query
         )
     }
+    
+    /// Legacy method to get frames, from AxxonNextRoute.frames (old Client proj)
+    /// Endpoint: `GET /archive/contents/frames/VIDEOSOURCEID/ENDTIME/BEGINTIME?limit=COUNT`
+    ///
+    /// Returns days that contain records for a source.
+    /// Sample: http://try.axxonsoft.com/archive/contents/frames/OWNEROR-2LRQDEG/DeviceIpint.3/SourceEndpoint.video:0:0/future/past?limit=5
+    public static func framesLegacy(
+        accessPoint: AccessPoint,   //TODO: вот тут должен быть не accessPoint камеры, а accessPoint потока который пишется в архив с id = storageId
+        begin: Date,
+        end: Date,
+        limit: Int,
+        storageId: AccessPoint?
+    ) -> Request<CalendarResponse> {
+        var query: [(String, String?)] = [
+            ("limit", String(limit))
+        ]
+        
+        if let storageId {
+            query.append(("archive", storageId.hosts))
+        }
+        
+        return Request(
+            path: "archive/contents/frames/\(accessPoint.nohosts)/\(end)/\(begin)",
+            method: .get,
+            query: query
+        )
+    }    
 }
