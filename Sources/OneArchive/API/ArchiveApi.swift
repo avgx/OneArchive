@@ -106,30 +106,31 @@ public enum ArchiveApi {
         )
     }
     
-    /// Legacy method to get frames, from AxxonNextRoute.frames (old Client proj)
-    /// Endpoint: `GET /archive/contents/frames/VIDEOSOURCEID/ENDTIME/BEGINTIME?limit=COUNT`
+    /// Endpoint: `GET /archive/contents/frames/{VIDEOSOURCEID}/{ENDTIME}/{BEGINTIME}`
     ///
-    /// Returns days that contain records for a source.
-    /// Sample: http://try.axxonsoft.com/archive/contents/frames/OWNEROR-2LRQDEG/DeviceIpint.3/SourceEndpoint.video:0:0/future/past?limit=5
-    public static func framesLegacy(
-        accessPoint: AccessPoint,   //TODO: вот тут должен быть не accessPoint камеры, а accessPoint потока который пишется в архив с id = storageId
-        begin: Date,
-        end: Date,
-        limit: Int,
-        storageId: AccessPoint?
-    ) -> Request<CalendarResponse> {
+    /// Returns registration times of frames stored in the archive for the video stream endpoint.
+    /// Use ``ArchiveTimeBound/past`` / ``ArchiveTimeBound/future`` or an instant for unbounded ranges.
+    ///
+    /// Sample: `archive/contents/frames/SERVER1/DeviceIpint.2/SourceEndpoint.video:0:0/past/future?limit=3`
+    public static func frames(
+        accessPoint: AccessPoint,
+        end: ArchiveTimeBound,
+        begin: ArchiveTimeBound,
+        limit: Int = 250,
+        archive: AccessPoint? = nil
+    ) -> Request<FramesResponse> {
         var query: [(String, String?)] = [
-            ("limit", String(limit))
+            ("limit", String(limit)),
         ]
-        
-        if let storageId {
-            query.append(("archive", storageId.hosts))
+
+        if let archive {
+            query.append(("archive", archive.hosts))
         }
-        
+
         return Request(
-            path: "archive/contents/frames/\(accessPoint.nohosts)/\(end)/\(begin)",
+            path: "archive/contents/frames/\(accessPoint.nohosts)/\(end.pathSegment)/\(begin.pathSegment)",
             method: .get,
             query: query
         )
-    }    
+    }
 }

@@ -51,6 +51,35 @@ struct ArchiveApiTests {
         )
         let _: Request<RecInfoResponse> = ArchiveApi.recordingInfo(accessPoint: ap)
         let _: Request<VolumesStateResponse> = ArchiveApi.volumesState(accessPoint: ap)
+        let _: Request<FramesResponse> = ArchiveApi.frames(
+            accessPoint: "hosts/SERVER1/DeviceIpint.2/SourceEndpoint.video:0:0",
+            end: .past,
+            begin: .future,
+            limit: 3
+        )
+    }
+
+    @Test("frames builds path and query")
+    func frames_path_and_query() {
+        let cursor = Date(timeIntervalSince1970: 1_700_000_000)
+        let request = ArchiveApi.frames(
+            accessPoint: "hosts/SERVER1/DeviceIpint.2/SourceEndpoint.video:0:0",
+            end: .past,
+            begin: .instant(cursor),
+            limit: 5,
+            archive: "hosts/SERVER1/MultimediaStorage.AliceBlue/MultimediaStorage"
+        )
+        #expect(
+            request.path
+                == "archive/contents/frames/SERVER1/DeviceIpint.2/SourceEndpoint.video:0:0/past/\(ArchiveTimeBound.instant(cursor).pathSegment)"
+        )
+        #expect(request.method == .get)
+        #expect(request.query?.contains(where: { $0.0 == "limit" && $0.1 == "5" }) == true)
+        #expect(
+            request.query?.contains(where: {
+                $0.0 == "archive" && $0.1 == "hosts/SERVER1/MultimediaStorage.AliceBlue/MultimediaStorage"
+            }) == true
+        )
     }
 
     @Test("depth matches calendar request")

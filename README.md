@@ -26,6 +26,7 @@ The package does **not** use protobuf code generation. Models follow what the se
 | `ArchiveApi.size(accessPoint:beginTime:endTime:)` | `GET /v1/archive/size` | `SizeResponse` |
 | `ArchiveApi.recordingInfo(accessPoint:updateCache:)` | `GET /v1/archive/recordingInfo` | `RecInfoResponse` |
 | `ArchiveApi.volumesState(accessPoint:volumeIds:)` | `GET /v1/archive/volumes/state` | `VolumesStateResponse` |
+| `ArchiveApi.frames(accessPoint:end:begin:limit:archive:)` | `GET /archive/contents/frames/...` | `FramesResponse` |
 
 Unlike **OneDomain** (`Request<Data>` + SSE/multipart), archive endpoints return a single JSON document — the response type is known at the call site.
 
@@ -109,6 +110,7 @@ Sources/OneArchive/
 ├── API/           ArchiveApi, AccessPoint
 ├── History/       HistoryRequest, HistoryResponse, ScanMode, …
 ├── Calendar/      CalendarResponse, ArchiveDepth
+├── Frames/        FramesResponse, ArchiveTimeBound
 ├── Size/          SizeResponse
 ├── RecordingInfo/
 ├── Volumes/       VolumesStateResponse, VolumeState
