@@ -8,7 +8,8 @@ public enum ArchiveApi {
     ///
     /// Returns available history intervals for a source. Response may be partial; see `HistoryResponse.result`.
     public static func history2(_ parameters: HistoryRequest) -> Request<HistoryResponse> {
-        Request(
+        precondition(parameters.accessPoint.contains("/Sources/src."))
+        return Request(
             path: "v1/archive/history2",
             method: .get,
             query: [
@@ -30,7 +31,8 @@ public enum ArchiveApi {
         begin: Date,
         end: Date
     ) -> Request<CalendarResponse> {
-        Request(
+        precondition(accessPoint.contains("/Sources/src."))
+        return Request(
             path: "v1/archive/calendar",
             method: .get,
             query: [
@@ -49,7 +51,8 @@ public enum ArchiveApi {
         begin: Date,
         end: Date
     ) -> Request<CalendarResponse> {
-        calendar(accessPoint: accessPoint, begin: begin, end: end)
+        precondition(accessPoint.contains("/Sources/src."))
+        return calendar(accessPoint: accessPoint, begin: begin, end: end)
     }
 
     /// Endpoint: `GET /v1/archive/size`
@@ -60,7 +63,8 @@ public enum ArchiveApi {
         beginTime: String,
         endTime: String
     ) -> Request<SizeResponse> {
-        Request(
+        precondition(accessPoint.contains("/Sources/src."))
+        return Request(
             path: "v1/archive/size",
             method: .get,
             query: [
@@ -76,7 +80,8 @@ public enum ArchiveApi {
         accessPoint: AccessPoint,
         updateCache: Bool = false
     ) -> Request<RecInfoResponse> {
-        Request(
+        precondition(accessPoint.contains("/Sources/src."))
+        return Request(
             path: "v1/archive/recordingInfo",
             method: .get,
             query: [
@@ -93,6 +98,8 @@ public enum ArchiveApi {
         accessPoint: AccessPoint,
         volumeIds: [String] = []
     ) -> Request<VolumesStateResponse> {
+        precondition(accessPoint.contains("MultimediaStorage"))
+        precondition(!accessPoint.contains("/Sources/src."))
         var query: [(String, String?)] = [
             ("access_point", accessPoint),
         ]
@@ -119,16 +126,85 @@ public enum ArchiveApi {
         limit: Int = 250,
         archive: AccessPoint? = nil
     ) -> Request<FramesResponse> {
+        precondition(accessPoint.contains("SourceEndpoint.video"))
+        precondition(!accessPoint.contains("/Sources/src."))
         var query: [(String, String?)] = [
             ("limit", String(limit)),
         ]
 
         if let archive {
+            precondition(archive.contains("MultimediaStorage"))
+            precondition(!archive.contains("/Sources/src."))
             query.append(("archive", archive.hosts))
         }
 
         return Request(
             path: "archive/contents/frames/\(accessPoint.nohosts)/\(end.pathSegment)/\(begin.pathSegment)",
+            method: .get,
+            query: query
+        )
+    }
+
+    /// Endpoint: `GET /archive/statistics/depth/{VIDEOSOURCEID}`
+    ///
+    /// Legacy archive bounds for a video stream. `thresholdDays` is the gap, in days, that still
+    /// counts as one continuous recording. The server default is 1, which stops at the latest
+    /// continuous piece when older records are separated by a longer gap.
+    ///
+    /// `accessPoint` is the video source (`SourceEndpoint.video`), not a storage source.
+    public static func statisticsDepth(
+        accessPoint: AccessPoint,
+        archive: AccessPoint? = nil,
+        thresholdDays: Int? = nil
+    ) -> Request<StatisticsDepthResponse> {
+        precondition(accessPoint.contains("SourceEndpoint.video"))
+        precondition(!accessPoint.contains("/Sources/src."))
+        var query: [(String, String?)] = []
+        if let archive {
+            precondition(archive.contains("MultimediaStorage"))
+            precondition(!archive.contains("/Sources/src."))
+            query.append(("archive", archive.hosts))
+        }
+        if let thresholdDays {
+            query.append(("threshold", String(thresholdDays)))
+        }
+        return Request(
+            path: "archive/statistics/depth/\(accessPoint.nohosts)",
+            method: .get,
+            query: query.isEmpty ? nil : query
+        )
+    }
+
+    /// Endpoint: `GET /archive/contents/intervals/{VIDEOSOURCEID}/{ENDTIME}/{BEGINTIME}`
+    ///
+    /// Legacy recorded intervals for a video stream. Path order is end, then begin.
+    /// Use ``ArchiveTimeBound/past`` / ``ArchiveTimeBound/future`` or an instant.
+    ///
+    /// `accessPoint` is the video source (`SourceEndpoint.video`), not a storage source.
+    /// `scale` is the interval resolution in seconds; larger values merge neighboring records.
+    public static func contentsIntervals(
+        accessPoint: AccessPoint,
+        end: ArchiveTimeBound,
+        begin: ArchiveTimeBound,
+        limit: Int,
+        scale: Int64,
+        offset: Int? = nil,
+        archive: AccessPoint
+    ) -> Request<ContentsIntervalsResponse> {
+        precondition(accessPoint.contains("SourceEndpoint.video"))
+        precondition(!accessPoint.contains("/Sources/src."))
+        precondition(archive.contains("MultimediaStorage"))
+        precondition(!archive.contains("/Sources/src."))
+        var query: [(String, String?)] = [
+            ("limit", String(limit)),
+            ("scale", String(scale)),
+            ("archive", archive.hosts),
+        ]
+        if let offset {
+            query.append(("offset", String(offset)))
+        }
+        return Request(
+            path: "archive/contents/intervals/\(accessPoint.nohosts)/\(end.pathSegment)/\(begin.pathSegment)",
             method: .get,
             query: query
         )

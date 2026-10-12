@@ -50,12 +50,27 @@ struct ArchiveApiTests {
             endTime: "20180605T000000.000000"
         )
         let _: Request<RecInfoResponse> = ArchiveApi.recordingInfo(accessPoint: ap)
-        let _: Request<VolumesStateResponse> = ArchiveApi.volumesState(accessPoint: ap)
+        let _: Request<VolumesStateResponse> = ArchiveApi.volumesState(
+            accessPoint: "hosts/Demoserver/MultimediaStorage.AliceBlue/MultimediaStorage"
+        )
         let _: Request<FramesResponse> = ArchiveApi.frames(
             accessPoint: "hosts/SERVER1/DeviceIpint.2/SourceEndpoint.video:0:0",
             end: .past,
             begin: .future,
             limit: 3
+        )
+        let _: Request<StatisticsDepthResponse> = ArchiveApi.statisticsDepth(
+            accessPoint: "hosts/SERVER1/DeviceIpint.1/SourceEndpoint.video:0:0",
+            archive: "hosts/SERVER1/MultimediaStorage.Red/MultimediaStorage",
+            thresholdDays: 365
+        )
+        let _: Request<ContentsIntervalsResponse> = ArchiveApi.contentsIntervals(
+            accessPoint: "hosts/SERVER1/DeviceIpint.1/SourceEndpoint.video:0:0",
+            end: .future,
+            begin: .past,
+            limit: 1,
+            scale: 1_000_000_000,
+            archive: "hosts/SERVER1/MultimediaStorage.Red/MultimediaStorage"
         )
     }
 
@@ -92,6 +107,81 @@ struct ArchiveApiTests {
         #expect(depth.path == calendar.path)
         #expect(depth.query?.map(\.0) == calendar.query?.map(\.0))
         #expect(depth.query?.map(\.1) == calendar.query?.map(\.1))
+    }
+
+    @Test("statisticsDepth builds video path and threshold")
+    func statisticsDepth_path_and_query() {
+        let request = ArchiveApi.statisticsDepth(
+            accessPoint: "hosts/SERVER1/DeviceIpint.1/SourceEndpoint.video:0:0",
+            archive: "SERVER1/MultimediaStorage.Red/MultimediaStorage",
+            thresholdDays: 365
+        )
+        #expect(request.method == .get)
+        #expect(
+            request.path
+                == "archive/statistics/depth/SERVER1/DeviceIpint.1/SourceEndpoint.video:0:0"
+        )
+        #expect(
+            request.query?.contains(where: {
+                $0.0 == "archive" && $0.1 == "hosts/SERVER1/MultimediaStorage.Red/MultimediaStorage"
+            }) == true
+        )
+        #expect(request.query?.contains(where: { $0.0 == "threshold" && $0.1 == "365" }) == true)
+    }
+
+    @Test("statisticsDepth omits threshold when unset")
+    func statisticsDepth_omits_threshold() {
+        let request = ArchiveApi.statisticsDepth(
+            accessPoint: "hosts/SERVER1/DeviceIpint.1/SourceEndpoint.video:0:0"
+        )
+        #expect(request.query == nil)
+    }
+
+    @Test("contentsIntervals builds future/past path and query")
+    func contentsIntervals_future_past() {
+        let request = ArchiveApi.contentsIntervals(
+            accessPoint: "hosts/SERVER1/DeviceIpint.1/SourceEndpoint.video:0:0",
+            end: .future,
+            begin: .past,
+            limit: 1,
+            scale: 1_000_000_000,
+            archive: "hosts/SERVER1/MultimediaStorage.Red/MultimediaStorage"
+        )
+        #expect(request.method == .get)
+        #expect(
+            request.path
+                == "archive/contents/intervals/SERVER1/DeviceIpint.1/SourceEndpoint.video:0:0/future/past"
+        )
+        #expect(request.query?.contains(where: { $0.0 == "limit" && $0.1 == "1" }) == true)
+        #expect(request.query?.contains(where: { $0.0 == "scale" && $0.1 == "1000000000" }) == true)
+        #expect(request.query?.contains(where: { $0.0 == "offset" }) == false)
+        #expect(
+            request.query?.contains(where: {
+                $0.0 == "archive" && $0.1 == "hosts/SERVER1/MultimediaStorage.Red/MultimediaStorage"
+            }) == true
+        )
+    }
+
+    @Test("contentsIntervals builds instant bounds and offset")
+    func contentsIntervals_instants_and_offset() {
+        let begin = Date(timeIntervalSince1970: 1_700_000_000)
+        let end = Date(timeIntervalSince1970: 1_800_000_000)
+        let request = ArchiveApi.contentsIntervals(
+            accessPoint: "hosts/SERVER1/DeviceIpint.1/SourceEndpoint.video:0:0",
+            end: .instant(end),
+            begin: .instant(begin),
+            limit: 500,
+            scale: 1,
+            offset: 20,
+            archive: "hosts/SERVER1/MultimediaStorage.Red/MultimediaStorage"
+        )
+        #expect(
+            request.path
+                == "archive/contents/intervals/SERVER1/DeviceIpint.1/SourceEndpoint.video:0:0/\(ArchiveTimeBound.instant(end).pathSegment)/\(ArchiveTimeBound.instant(begin).pathSegment)"
+        )
+        #expect(request.query?.contains(where: { $0.0 == "limit" && $0.1 == "500" }) == true)
+        #expect(request.query?.contains(where: { $0.0 == "scale" && $0.1 == "1" }) == true)
+        #expect(request.query?.contains(where: { $0.0 == "offset" && $0.1 == "20" }) == true)
     }
 
     @Test("volumesState repeats volume_ids")
